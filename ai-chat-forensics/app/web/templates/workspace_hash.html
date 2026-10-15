@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Workspace hash tool - F.A.I.T.H{% endblock %}
+{% block content %}
+<section class="tool-page">
+  <p class="back-link"><a href="{{ url_for('upload') }}">&larr; Back</a></p>
+  <h1>Workspace storage hash calculator</h1>
+  <p>
+    Recomputes VS Code's <code>workspaceStorage/&lt;hash&gt;</code> folder name from a folder path, so you can
+    tie a session file back to the project folder it came from even without the original storage directory.
+    Formula per <code>workspaces.ts</code>: <code>md5(fsPath + ctime)</code> for local folders (Linux uses the
+    inode instead of ctime), <code>md5(uri)</code> for remote (WSL/SSH) folders. You supply the path and
+    creation time/inode yourself - from a forensic image's timestamps, or a live
+    <code>(Get-Item $path).CreationTimeUtc</code> - this tool never reads your filesystem.
+  </p>
+  <p class="hint tool-note">
+    <strong>Evidence:</strong> this formula reproduces the one documented worked example in notes.md
+    (<code>C:\dev\research</code> + a known creation time &rarr; the real folder hash) exactly [observed].
+    Several variants are listed below because VS Code's exact path casing isn't always knowable in advance
+    (drive letter case, for one) - check each against the real folder name you're trying to match.
+  </p>
+
+  <form method="post" class="hash-form">
+    <label>Folder type
+      <select name="os_type">
+        <option value="windows" {% if os_type == "windows" %}selected{% endif %}>Local - Windows</option>
+        <option value="macos" {% if os_type == "macos" %}selected{% endif %}>Local - macOS</option>
+        <option value="linux" {% if os_type == "linux" %}selected{% endif %}>Local - Linux</option>
+        <option value="remote" {% if os_type == "remote" %}selected{% endif %}>Remote (WSL/SSH) - URI string</option>
+      </select>
+    </label>
+
+    <label>Folder path (or full URI for remote)
+      <input type="text" name="path" value="{{ path }}" placeholder="C:\dev\research  or  file:///home/user/project">
+    </label>
+
+    <label>Creation time, epoch milliseconds (Windows/macOS only)
+      <input type="text" name="ctime_ms" value="{{ ctime_ms }}" placeholder="1792008626997">
+    </label>
+
+    <label>Inode number (Linux only)
+      <input type="text" name="inode" value="{{ inode }}" placeholder="123456">
+    </label>
+
+    <button type="submit">Compute hash</button>
+  </form>
+
+  {% if variants %}
+  <h2>Results</h2>
+  <div class="table-scroll">
+  <table class="artifact-table">
+    <thead><tr><th>Variant</th><th>Hashed string</th><th>MD5</th></tr></thead>
+    <tbody>
+    {% for v in variants %}
+      <tr>
+        <td>{{ v.label }}</td>
+        <td class="mono">{{ v.input }}</td>
+        <td class="mono">{{ v.md5 }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="hint">Compare each against the real <code>workspaceStorage\&lt;hash&gt;</code> folder name you're trying to match.</p>
+  {% endif %}
+</section>
+{% endblock %}

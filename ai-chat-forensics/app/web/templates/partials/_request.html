@@ -1,0 +1,70 @@
+{% set req = row.request %}
+{% if row.gap_before %}
+<div class="idle-divider">{{ row.gap_before }}</div>
+{% endif %}
+<article class="exchange"
+  id="request-{{ sidx }}-{{ req.index }}"
+  data-panel="{{ sidx }}"
+  data-bookmarked="0"
+  data-op-file-write="{{ 1 if row.op_flags['file-write'] else 0 }}"
+  data-op-file-read="{{ 1 if row.op_flags['file-read'] else 0 }}"
+  data-op-exec="{{ 1 if row.op_flags['exec'] else 0 }}"
+  data-op-attachment="{{ 1 if row.op_flags['attachment'] else 0 }}"
+  data-op-incomplete="{{ 1 if row.op_flags['incomplete'] else 0 }}">
+  <div class="msg-row user-row">
+    <div class="msg-col">
+      <div class="bubble user-bubble">
+        <div class="bubble-text">{{ req.message_text }}</div>
+        {% if req.variables %}
+        <div class="attachment-chips">
+          {% for v in req.variables %}
+          <span class="chip attachment-chip" title="{{ v.id }}">{{ v.name or v.id or "attachment" }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="msg-meta">{{ req.timestamp | timestamp }}</div>
+    </div>
+    <span class="avatar user-avatar" aria-hidden="true">YOU</span>
+  </div>
+
+  <div class="msg-row ai-row">
+    <span class="avatar ai-avatar" aria-hidden="true">AI</span>
+    <div class="msg-col">
+      <div class="bubble ai-bubble{% if req.is_incomplete %} incomplete{% endif %}">
+        {% if req.is_incomplete %}
+        <div class="incomplete-banner">Incomplete / in flight &mdash; response may end mid-sentence, no result recorded</div>
+        {% endif %}
+        {% for item in row.timeline %}
+          {% if item.type == "markdown" %}
+            <div class="markdown">{{ item.html | safe }}</div>
+          {% elif item.type == "tool_call" %}
+            {% include "partials/_tool_card.html" %}
+          {% else %}
+            <details class="generic-item">
+              <summary>
+                {{ item.kind or "unrendered item" }}
+                {% if item.known_kind %}
+                  <span class="hint">(not specially rendered)</span>
+                {% else %}
+                  <span class="hint">(meaning unknown)</span>
+                {% endif %}
+              </summary>
+              <pre class="mono">{{ item.raw | tojson(indent=2) }}</pre>
+            </details>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <div class="msg-meta">
+        {{ req.timestamp | timestamp }}
+        {% if row.display_model %} &middot; {{ row.display_model }}{% endif %}
+        {% if req.elapsed_ms %} &middot; {{ req.elapsed_ms | duration }}{% endif %}
+        <button type="button" class="flag-toggle" aria-pressed="false" title="Bookmark this exchange for your own reference - not saved, resets when you reload the page">
+          <svg class="flag-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</article>

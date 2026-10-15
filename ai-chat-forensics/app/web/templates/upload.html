@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Open a session - F.A.I.T.H{% endblock %}
+{% block content %}
+<section class="upload-page">
+  <h1>Open Copilot Chat session(s)</h1>
+  <p>
+    Drop one or more <code>chatSessions/&lt;sessionId&gt;.jsonl</code> files here, or choose them.
+    Parsing happens in this local server process only; nothing is uploaded anywhere else,
+    and nothing from the files is written to disk, a log, or a database.
+  </p>
+
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+
+  <form method="post" enctype="multipart/form-data" id="upload-form">
+    <label id="dropzone" class="dropzone" for="file-input">
+      <span class="dropzone-text">Drag and drop .jsonl files here, or click to choose them</span>
+      <input type="file" name="session_file" id="file-input" accept=".jsonl,application/jsonl,text/plain" multiple>
+      <span id="file-name" class="file-name"></span>
+    </label>
+    <button type="submit">Parse session(s)</button>
+  </form>
+
+  <p class="tool-link"><a href="{{ url_for('workspace_hash_tool') }}">Workspace storage hash calculator &rarr;</a></p>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endblock %}

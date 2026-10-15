@@ -1,0 +1,37 @@
+{% set call = item.call %}
+{% if call %}
+<div class="action-line{% if call.is_terminal %} terminal{% endif %}">
+  <span class="action-icon" title="{{ item.icon_title }}">{{ item.icon }}</span>
+  <span class="action-text meta-trigger" tabindex="0">
+    {{ call.past_tense_message or call.invocation_message or call.tool_id }}
+    <span class="meta-popover">
+      <div class="mono">{{ call.tool_id }}</div>
+      {% if call.round_name and call.round_name != call.tool_id %}<div>round name: {{ call.round_name }}</div>{% endif %}
+      <div>confirm type {{ call.is_confirmed_type if call.is_confirmed_type is not none else "?" }}{% if call.is_confirmed_type not in (1, 4) %} <span class="hint">(meaning unconfirmed)</span>{% endif %}</div>
+      {% if call.is_terminal and call.terminal and call.terminal.command_timestamp %}<div>ran {{ call.terminal.command_timestamp | timestamp }}</div>{% endif %}
+      {% if call.is_terminal and call.terminal %}<div class="mono">cwd: {{ call.terminal.cwd or "unknown" }}</div>{% endif %}
+    </span>
+  </span>
+  {% if call.is_terminal and call.terminal %}
+  <code class="mono action-command">{{ call.terminal.command_for_display or call.terminal.command_original }}</code>
+  {% endif %}
+  {% if call.arguments or (call.result and (call.result.text or call.result.kind not in ("missing", "string", "node_tree"))) %}
+  <details class="action-detail">
+    <summary>details</summary>
+    {% if call.arguments %}<pre class="mono">{{ call.arguments | tojson(indent=2) }}</pre>{% endif %}
+    {% if call.result %}
+      {% if call.result.text %}<pre class="mono">{{ call.result.text }}</pre>
+      {% elif call.result.kind == "missing" %}<p class="hint">no recorded result for this call</p>
+      {% else %}<pre class="mono">{{ call.result.raw | tojson(indent=2) }}</pre>
+      {% endif %}
+    {% endif %}
+  </details>
+  {% endif %}
+</div>
+{% else %}
+<div class="action-line">
+  <span class="action-icon" title="{{ item.icon_title }}">{{ item.icon }}</span>
+  <span class="action-text">{{ item.raw.toolId or "unknown tool" }} <span class="hint">(not joined to a round call)</span></span>
+  <details class="action-detail"><summary>details</summary><pre class="mono">{{ item.raw | tojson(indent=2) }}</pre></details>
+</div>
+{% endif %}

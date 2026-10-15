@@ -1,0 +1,118 @@
+{% macro req_links(indices) %}{% for idx in indices | unique | list %}<a href="#request-{{ sidx }}-{{ idx }}">#{{ idx }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endmacro %}
+
+<p class="hint artifacts-note">Factual listing only, extracted from the parsed session - nothing here is flagged as suspicious.</p>
+
+<div class="export-row">
+  <button type="button" class="export-btn" data-export="json" data-panel="{{ sidx }}" data-filename="{{ (sess.custom_title or f.name) | replace(' ', '_') }}-artifacts">Export JSON</button>
+  <button type="button" class="export-btn" data-export="csv" data-panel="{{ sidx }}" data-filename="{{ (sess.custom_title or f.name) | replace(' ', '_') }}-artifacts">Export CSV</button>
+</div>
+<script type="application/json" class="artifacts-data" data-panel="{{ sidx }}">{{ art | tojson }}</script>
+
+<div class="artifact-section">
+  <h3>Files touched ({{ art.files | length }})</h3>
+  {% if art.files %}
+  <div class="table-scroll">
+  <table class="artifact-table">
+    <thead><tr><th>Path</th><th>Actions</th><th>First seen</th><th>Last seen</th><th>Requests</th></tr></thead>
+    <tbody>
+    {% for f in art.files %}
+      <tr>
+        <td class="mono">{{ f.path }}</td>
+        <td>{{ f.actions | unique | join(", ") }}</td>
+        <td>{{ f.first_seen | timestamp }}</td>
+        <td>{{ f.last_seen | timestamp }}</td>
+        <td>{{ req_links(f.request_indices) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="hint">no files recorded</p>
+  {% endif %}
+</div>
+
+<div class="artifact-section">
+  <h3>Terminal commands ({{ art.commands | length }})</h3>
+  {% if art.commands %}
+  <div class="table-scroll">
+  <table class="artifact-table">
+    <thead><tr><th>Command</th><th>Cwd</th><th>When</th><th>Request</th></tr></thead>
+    <tbody>
+    {% for c in art.commands %}
+      <tr>
+        <td class="mono">{{ c.command }}</td>
+        <td class="mono">{{ c.cwd or "unknown" }}</td>
+        <td>{{ c.timestamp | timestamp }}</td>
+        <td>{{ req_links([c.request_index]) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="hint">no terminal commands recorded</p>
+  {% endif %}
+</div>
+
+<div class="artifact-section">
+  <h3>URLs / hosts referenced ({{ art.urls | length }})</h3>
+  {% if art.urls %}
+  <ul class="artifact-list">
+    {% for u in art.urls %}
+    <li>
+      <span class="mono">{{ u.url }}</span>
+      <span class="hint">({{ u.sources | unique | join(", ") }} &middot; {{ req_links(u.request_indices) }})</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="hint">no URLs recorded</p>
+  {% endif %}
+</div>
+
+<div class="artifact-section">
+  <h3>Attachments ({{ art.attachments | length }})</h3>
+  {% if art.attachments %}
+  <ul class="artifact-list">
+    {% for a in art.attachments %}
+    <li>
+      <details class="attachment-detail">
+        <summary>
+          {{ a.file_path or a.id or "attachment" }}
+          <span class="hint">({{ a.content_length }} chars, as of prompt time &middot; {{ a.timestamp | timestamp }} &middot; {{ req_links([a.request_index]) }})</span>
+        </summary>
+        <pre class="mono">{{ a.content }}</pre>
+      </details>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="hint">no attachments recorded</p>
+  {% endif %}
+</div>
+
+<div class="artifact-section">
+  <h3>Terminal/editor context by request ({{ art.prompt_context | length }})</h3>
+  <p class="hint">What the model saw at each prompt, independent of any tool call - the last command run, its exit code, and the working directory at that moment. A session with no terminal integration (e.g. some WSL/remote setups) may show no last command/exit code here even when terminal tool calls happened elsewhere in the session.</p>
+  {% if art.prompt_context %}
+  <div class="table-scroll">
+  <table class="artifact-table">
+    <thead><tr><th>Request</th><th>When</th><th>Last command</th><th>Cwd</th><th>Exit code</th></tr></thead>
+    <tbody>
+    {% for c in art.prompt_context %}
+      <tr>
+        <td>{{ req_links([c.request_index]) }}</td>
+        <td>{{ c.timestamp | timestamp }}</td>
+        <td class="mono">{{ c.last_command or "—" }}</td>
+        <td class="mono">{{ c.cwd or "—" }}</td>
+        <td class="mono">{{ c.exit_code if c.exit_code is not none else "—" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="hint">no prompt context recorded</p>
+  {% endif %}
+</div>

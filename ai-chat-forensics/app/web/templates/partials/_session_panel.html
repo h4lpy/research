@@ -1,0 +1,76 @@
+{% set session_data = s.session_data %}
+{% set header = s.header %}
+{% set rows = s.rows %}
+{% set art = s.artifacts %}
+{% set sess = session_data.session %}
+{% set f = session_data.file %}
+<section class="session-panel{% if is_first %} active{% endif %}" id="session-panel-{{ sidx }}">
+  <div class="session-title-row">
+    <h1>{{ sess.custom_title or "(no title yet)" }}</h1>
+    {% if header.filename_mismatch %}
+      <span class="badge badge-warn" title="filename does not match sessionId">filename mismatch</span>
+    {% endif %}
+  </div>
+  <p class="session-meta">
+    {{ sess.account_label or "unknown account" }}
+    &middot; {{ header.modes | join(", ") or "unknown mode" }}
+    &middot; {{ header.models | join(", ") or "unknown model" }}
+    &middot; {{ header.workspace_paths | join(", ") or "unknown workspace" }}
+  </p>
+
+  <p class="stat-line">
+    <span class="stat"><strong>{{ session_data.requests | length }}</strong> requests</span><span class="stat-sep">/</span><span class="stat"><strong>{{ header.span_label or "–" }}</strong> span</span><span class="stat-sep">/</span><span class="stat{% if session_data.warnings %} stat-warn{% endif %}"><strong>{{ session_data.warnings | length }}</strong> warnings</span>
+  </p>
+
+  {% if session_data.warnings %}
+  <details class="warnings">
+    <summary>{{ session_data.warnings | length }} warning(s) / note(s)</summary>
+    <ul>
+    {% for w in session_data.warnings %}
+      <li>
+        <span class="evidence-badge evidence-{{ w.evidence or 'hypothesis' }}">{{ w.evidence or "hypothesis" }}</span>
+        {{ w.message }}
+        {% if w.line %}<span class="hint">(line {{ w.line }})</span>{% endif %}
+      </li>
+    {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+
+  <details class="evidence-details">
+    <summary>Evidence details</summary>
+    <dl class="header-grid">
+      <div><dt>File</dt><dd>{{ f.name }} &middot; {{ f.size }} bytes &middot; {{ f.line_count }} lines</dd></div>
+      <div><dt>SHA-256</dt><dd class="mono">{{ f.sha256 }}</dd></div>
+      <div><dt>Session ID</dt><dd class="mono">{{ sess.session_id }}</dd></div>
+      <div><dt>Created</dt><dd>{{ sess.creation_date | timestamp }}</dd></div>
+      <div><dt>First / last prompt</dt><dd>{{ header.first_prompt_time | timestamp }} &rarr; {{ header.last_prompt_time | timestamp }}</dd></div>
+      <div><dt>Extension version(s)</dt><dd>{{ header.extension_versions | join(", ") or "unknown" }}</dd></div>
+      <div><dt>Model (selected / resolved)</dt>
+        <dd>{{ sess.selected_model_identifier }}{% if sess.selected_model_is_auto_placeholder %} <span class="hint">(auto - placeholder)</span>{% endif %} &middot; resolved: {{ header.models | join(", ") or "unknown" }}</dd>
+      </div>
+      <div><dt>Tokens / credits</dt>
+        <dd>{{ header.total_prompt_tokens }} prompt + {{ header.total_completion_tokens }} completion &middot; {{ "%.3f"|format(header.total_credits) }} credits</dd>
+      </div>
+    </dl>
+  </details>
+
+  <div class="panel-tabs">
+    <button type="button" class="panel-tab active" data-panel="{{ sidx }}" data-tab="chat">Chat</button>
+    <button type="button" class="panel-tab" data-panel="{{ sidx }}" data-tab="artifacts">Artifacts</button>
+  </div>
+
+  <div class="tab-content active" data-panel="{{ sidx }}" data-tab-content="chat">
+    <section class="chat">
+    {% for row in rows %}
+      {% include "partials/_request.html" %}
+    {% else %}
+      <p class="empty-note">This session has no requests yet (a session can exist with zero prompts).</p>
+    {% endfor %}
+    </section>
+  </div>
+
+  <div class="tab-content" data-panel="{{ sidx }}" data-tab-content="artifacts">
+    {% include "partials/_artifacts.html" %}
+  </div>
+</section>

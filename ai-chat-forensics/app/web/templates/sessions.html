@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}
+{% if sessions | length == 1 %}{{ sessions[0].session_data.session.custom_title or sessions[0].session_data.file.name }}{% else %}{{ sessions | length }} sessions{% endif %} - F.A.I.T.H
+{% endblock %}
+{% block main_class %}main-wide{% endblock %}
+{% block content %}
+<div class="app-layout">
+  <nav class="session-sidebar">
+    <p class="back-link"><a href="{{ url_for('upload') }}">&larr; Parse more sessions</a></p>
+    <p class="tool-link"><a href="{{ url_for('workspace_hash_tool') }}">Workspace hash tool &rarr;</a></p>
+    {% if errors %}
+    <p class="error" role="alert">{{ errors | join(" / ") }}</p>
+    {% endif %}
+
+    <div class="global-search-box">
+      <input type="search" id="global-search" placeholder="{% if sessions | length > 1 %}Search all {{ sessions | length }} sessions...{% else %}Search this session...{% endif %}">
+      <span class="hint" id="global-search-count"></span>
+    </div>
+
+    <div class="filter-bar">
+      <button type="button" class="filter-chip" data-filter="file-write" title="Exchanges where the AI created, edited, or created a directory for a file (copilot_createFile / copilot_replaceString / copilot_createDirectory).">File writes</button>
+      <button type="button" class="filter-chip" data-filter="file-read" title="Exchanges where the AI read a file's contents (copilot_readFile).">File reads</button>
+      <button type="button" class="filter-chip" data-filter="exec" title="Exchanges where the AI ran a terminal command (run_in_terminal) - these need user approval (isConfirmed.type 4).">Terminal</button>
+      <button type="button" class="filter-chip" data-filter="attachment" title="Exchanges where the user attached a file via the + menu (variableData.variables).">Attachments</button>
+      <button type="button" class="filter-chip" data-filter="incomplete" title="Exchanges with no result recorded yet - modelState.value is 0 with no result; the response may end mid-sentence.">Incomplete</button>
+      <button type="button" class="filter-chip" data-filter="bookmarked" title="Exchanges you've flagged on this page - not saved, resets when you reload.">Flagged</button>
+    </div>
+    <p class="hint filter-hint">Filters combine with search; multiple filters show exchanges matching any of them.</p>
+
+    {% for s in sessions %}
+      {% set sess = s.session_data.session %}
+      <button type="button" class="session-nav-item{% if loop.first %} active{% endif %}" data-panel="{{ loop.index0 }}">
+        <div class="session-nav-title">{{ sess.custom_title or s.session_data.file.name }}</div>
+        <div class="session-nav-time">{{ sess.creation_date | datetime_short }}</div>
+        <div class="session-nav-meta">
+          {{ s.session_data.requests | length }} req
+          {% if s.session_data.warnings %}&middot; <span class="nav-warn">{{ s.session_data.warnings | length }} warn</span>{% endif %}
+          <span class="session-nav-match-badge" data-panel="{{ loop.index0 }}"></span>
+        </div>
+      </button>
+    {% endfor %}
+  </nav>
+
+  <div class="session-panels">
+    {% for s in sessions %}
+      {% set sidx = loop.index0 %}
+      {% set is_first = loop.first %}
+      {% include "partials/_session_panel.html" %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endblock %}

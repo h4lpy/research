@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}F.A.I.T.H{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="app-header">
+  <a class="brand" href="{{ url_for('upload') }}">
+    <svg class="brand-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="6.5"></circle>
+      <line x1="15.3" y1="15.3" x2="21" y2="21"></line>
+    </svg>
+    <span class="brand-text">
+      <span class="brand-mark">F.A.I.T.H</span>
+      <span class="brand-full">Forensic AI Transcript Hunting</span>
+    </span>
+  </a>
+  <button type="button" id="redact-toggle" class="redact-toggle" aria-pressed="false" title="Blur prompt/response text, paths, and account/workspace info - for screenshots. Hover a blurred item to reveal it temporarily.">Redact: off</button>
+</header>
+<main class="{% block main_class %}{% endblock %}">
+{% block content %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
+<script src="{{ url_for('static', filename='redact.js') }}"></script>
+</body>
+</html>
